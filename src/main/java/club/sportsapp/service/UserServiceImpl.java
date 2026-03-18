@@ -59,6 +59,7 @@ public class UserServiceImpl implements IUserService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserReadOnlyDTO getUserByUuid(UUID uuid) throws EntityNotFoundException {
 
         try {
@@ -76,6 +77,7 @@ public class UserServiceImpl implements IUserService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserReadOnlyDTO getUserByUuidDeletedFalse(UUID uuid) throws EntityNotFoundException {
 
         try {
