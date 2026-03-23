@@ -38,7 +38,7 @@ public class PersonalInfo extends AbstractEntity{
         this.membershipFile = attachment;
     }
 
-    public void removeMembershipFile(Attachment attachment) {
+    public void removeMembershipFile() {
         this.membershipFile = null;
     }
 }

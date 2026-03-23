@@ -43,6 +43,7 @@ public class UserRestController {
                 .body(userReadOnlyDTO);
     }
 
+    @GetMapping("/{uuid}")
     public ResponseEntity<UserReadOnlyDTO> getUserByUUID(@PathVariable UUID uuid)
             throws EntityNotFoundException {
 

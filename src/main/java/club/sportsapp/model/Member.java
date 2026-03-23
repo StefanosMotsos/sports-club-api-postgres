@@ -51,6 +51,11 @@ public class Member extends AbstractEntity {
         this.uuid = UUID.randomUUID();
     }
 
+    public void addUser(User user) {
+        this.user = user;
+        user.setMember(this);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Member member)) return false;
