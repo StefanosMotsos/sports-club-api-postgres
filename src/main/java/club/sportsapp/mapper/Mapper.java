@@ -19,7 +19,8 @@ public class Mapper {
 
     public MemberReadOnlyDTO mapToMemberReadOnlyDTO(Member member) {
         return new MemberReadOnlyDTO(member.getUuid().toString(), member.getFirstname(), member.getLastname(),
-                member.getVat(), member.getSport().getName());
+                member.getVat(), member.getSport().getName(), member.getPersonalInfo().getIdentityNumber(),
+                member.getPersonalInfo().getMembershipId(), member.getUser().getUsername());
     }
 
     public Member mapToMemberEntity(MemberInsertDTO memberInsertDTO) {

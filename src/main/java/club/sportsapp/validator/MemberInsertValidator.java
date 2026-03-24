@@ -29,23 +29,23 @@ public class MemberInsertValidator implements Validator {
         MemberInsertDTO memberInsertDTO = (MemberInsertDTO) target;
 
         if (memberService.isMemberExists(memberInsertDTO.vat())) {
-            log.warn("Saved failed, member with vat={} already exists", memberInsertDTO.vat());
-            errors.rejectValue("vat", "member already exists", "Member with vat " + memberInsertDTO.vat() + " already exists");
+            log.warn("Save failed, member with vat={} already exists", memberInsertDTO.vat());
+            errors.rejectValue("vat", "member.already.exists", "Member with vat " + memberInsertDTO.vat() + " already exists");
         }
 
         if (personalInfoRepository.findByMembershipId(memberInsertDTO.personalInfoInsertDTO().membershipId()).isPresent()) {
-            log.warn("Saved failed, member with membership={} already exists", memberInsertDTO.personalInfoInsertDTO().membershipId());
-            errors.rejectValue("membershipId", "member already exists", "Member with membership " + memberInsertDTO.personalInfoInsertDTO().membershipId() + " already exists");
+            log.warn("Save failed, member with membership={} already exists", memberInsertDTO.personalInfoInsertDTO().membershipId());
+            errors.rejectValue("membershipId", "member.already.exists", "Member with membership " + memberInsertDTO.personalInfoInsertDTO().membershipId() + " already exists");
         }
 
         if (personalInfoRepository.findByIdentityNumber(memberInsertDTO.personalInfoInsertDTO().identityNumber()).isPresent()) {
-            log.warn("Saved failed, member with identity number={} already exists", memberInsertDTO.personalInfoInsertDTO().identityNumber());
-            errors.rejectValue("identityNumber", "member already exists", "Member with identity number " + memberInsertDTO.personalInfoInsertDTO().identityNumber() + " already exists");
+            log.warn("Save failed, member with identity number={} already exists", memberInsertDTO.personalInfoInsertDTO().identityNumber());
+            errors.rejectValue("identityNumber", "member.already.exists", "Member with identity number " + memberInsertDTO.personalInfoInsertDTO().identityNumber() + " already exists");
         }
 
         if (userRepository.findByUsername(memberInsertDTO.userInsertDTO().username()).isPresent()) {
-            log.warn("Saved failed, member with username={} already exists", memberInsertDTO.userInsertDTO().username());
-            errors.rejectValue("username", "member already exists", "Member with username " + memberInsertDTO.userInsertDTO().username() + " already exists");
+            log.warn("Save failed, member with username={} already exists", memberInsertDTO.userInsertDTO().username());
+            errors.rejectValue("username", "member.already.exists", "Member with username " + memberInsertDTO.userInsertDTO().username() + " already exists");
         }
     }
 }

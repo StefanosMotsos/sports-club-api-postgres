@@ -214,18 +214,56 @@ public class MemberServiceImpl implements IMemberService{
     }
 
     @Override
+    @PreAuthorize("hasAuthority('DELETE_MEMBER')")
+    @Transactional(rollbackFor = EntityNotFoundException.class)
     public MemberReadOnlyDTO deleteMemberByUUID(UUID uuid) throws EntityNotFoundException {
-        return null;
+
+        try {
+            Member member = memberRepository.findByUuid(uuid)
+                    .orElseThrow(() -> new EntityNotFoundException("Member", "Member with uuid " + uuid + " was not found"));
+
+            member.softDelete();
+            member.getPersonalInfo().softDelete();
+            member.getUser().softDelete();
+
+            log.info("Member with uuid={} was deleted successfully", uuid);
+            return (mapper.mapToMemberReadOnlyDTO(member));
+        } catch (EntityNotFoundException e) {
+            log.error("Update failed. Member with uuid={} was not found", uuid);
+            throw e;
+        }
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(rollbackFor = EntityNotFoundException.class)
     public MemberReadOnlyDTO getMemberByUUID(UUID uuid) throws EntityNotFoundException {
-        return null;
+
+        try {
+            Member member = memberRepository.findByUuid(uuid)
+                    .orElseThrow(() -> new EntityNotFoundException("Member", "Member with uuid " + uuid + " was not found"));
+
+            log.debug("Get member by uuid={} returned successfully", uuid);
+            return mapper.mapToMemberReadOnlyDTO(member);
+        } catch (EntityNotFoundException e) {
+            log.error("Get member by uuid={} failed", uuid, e);
+            throw e;
+        }
     }
 
     @Override
+    @Transactional(rollbackFor = EntityNotFoundException.class)
     public MemberReadOnlyDTO getMemberByUUIDAndDeletedFalse(UUID uuid) throws EntityNotFoundException {
-        return null;
+        try {
+            Member member = memberRepository.findByUuidAndDeletedFalse(uuid)
+                    .orElseThrow(() -> new EntityNotFoundException("Member", "Member with uuid " + uuid + " was not found"));
+
+            log.debug("Get non deleted member by uuid={} returned successfully", uuid);
+            return mapper.mapToMemberReadOnlyDTO(member);
+        } catch (EntityNotFoundException e) {
+            log.error("Get non deleted member by uuid={} failed", uuid, e);
+            throw e;
+        }
     }
 
     @Override
