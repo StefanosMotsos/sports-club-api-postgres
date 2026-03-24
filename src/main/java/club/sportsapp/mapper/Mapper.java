@@ -43,4 +43,11 @@ public class Mapper {
         member.setPersonalInfo(personalInfo);
         return member;
     }
+
+    public void updateMemberEntity(Member member, MemberUpdateDTO dto) {
+        member.setFirstname(dto.firstname());
+        member.setLastname(dto.lastname());
+        member.getPersonalInfo().setPlaceOfBirth(dto.personalInfoUpdateDTO().placeOfBirth());
+        member.getPersonalInfo().setBranchOfRegistration(dto.personalInfoUpdateDTO().branchOfRegistration());
+    }
 }

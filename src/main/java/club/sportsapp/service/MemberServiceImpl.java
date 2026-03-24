@@ -6,6 +6,7 @@ import club.sportsapp.core.exceptions.EntityNotFoundException;
 import club.sportsapp.core.exceptions.FileUploadException;
 import club.sportsapp.dto.MemberInsertDTO;
 import club.sportsapp.dto.MemberReadOnlyDTO;
+import club.sportsapp.dto.MemberUpdateDTO;
 import club.sportsapp.mapper.Mapper;
 import club.sportsapp.model.*;
 import club.sportsapp.model.static_data.Sport;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -144,8 +147,70 @@ public class MemberServiceImpl implements IMemberService{
     }
 
     @Override
-    public MemberReadOnlyDTO updateMember(MemberInsertDTO dto) throws EntityAlreadyExistsException, EntityInvalidArgumentException, EntityNotFoundException {
-        return null;
+    @PreAuthorize("hasAuthority('EDIT_MEMBER')")
+    public MemberReadOnlyDTO updateMember(MemberUpdateDTO dto)
+            throws EntityAlreadyExistsException, EntityInvalidArgumentException, EntityNotFoundException {
+
+        try {
+            Member member = memberRepository.findByUuid(dto.uuid()).
+                    orElseThrow(() -> new EntityNotFoundException("Member", "Update failed. Member with uuid " + dto.uuid() + " was not found"));
+
+            mapper.updateMemberEntity(member, dto);
+
+            if (!member.getVat().equals(dto.vat())) {
+                if (memberRepository.findByVat(dto.vat()).isPresent()) {
+                    throw new EntityAlreadyExistsException("Member", "Update failed. Member with vat " + dto.vat() + " already exists");
+                }
+                member.setVat(dto.vat());
+            }
+
+            if (!Objects.equals(member.getSport().getId(), dto.sportId())) {
+                Sport sport = sportRepository.findById(dto.sportId())
+                        .orElseThrow(() -> new EntityInvalidArgumentException("Sport","Sport id=" + dto.sportId() + " invalid"));
+                Sport oldSport = member.getSport();
+                if (oldSport != null) {
+                    oldSport.removeMember(member);
+                }
+                sport.addMember(member);
+            }
+
+            if (!member.getUser().getUsername().equals(dto.userUpdateDTO().username())) {
+                if (userRepository.findByUsername(dto.userUpdateDTO().username()).isPresent()) {
+                    throw new EntityAlreadyExistsException("User", "Update failed. Member with username " + dto.userUpdateDTO().username() + " already exists");
+                }
+                member.getUser().setUsername((dto.userUpdateDTO().username()));
+            }
+
+            if (!member.getUser().getPassword().equals(dto.userUpdateDTO().password())) {
+                member.getUser().setPassword(passwordEncoder.encode(dto.userUpdateDTO().password()));
+            }
+
+            if (!member.getPersonalInfo().getMembershipId().equals(dto.personalInfoUpdateDTO().membershipId())) {
+                if (personalInfoRepository.findByMembershipId(dto.personalInfoUpdateDTO().membershipId()).isPresent()) {
+                    throw new EntityAlreadyExistsException("PersonalInfo", "Update failed. Member with membership " + dto.personalInfoUpdateDTO().membershipId() + " already exists");
+                }
+                member.getPersonalInfo().setMembershipId(dto.personalInfoUpdateDTO().membershipId());
+            }
+
+            if (!member.getPersonalInfo().getIdentityNumber().equals(dto.personalInfoUpdateDTO().identityNumber())) {
+                if (personalInfoRepository.findByMembershipId(dto.personalInfoUpdateDTO().identityNumber()).isPresent()) {
+                    throw new EntityAlreadyExistsException("PersonalInfo", "Update failed. Member with identity number " + dto.personalInfoUpdateDTO().identityNumber() + " already exists");
+                }
+                member.getPersonalInfo().setMembershipId(dto.personalInfoUpdateDTO().identityNumber());
+            }
+
+            log.info("Member with uuid={} updated successfully", dto.uuid());
+            return mapper.mapToMemberReadOnlyDTO(member);
+        } catch (EntityNotFoundException e) {
+            log.error("Update failed for member with uuid={}. Member not found", dto.uuid(), e);
+            throw e;
+        } catch (EntityAlreadyExistsException e) {
+            log.error("Update failed for member with uuid={}. Member with vat={} already exists", dto.uuid(), dto.vat(), e);
+            throw e;
+        } catch (EntityInvalidArgumentException e) {
+            log.error("Update failed for member with uuid={}. Sport id={} invalid", dto.uuid(), dto.sportId(), e);
+            throw e;
+        }
     }
 
     @Override

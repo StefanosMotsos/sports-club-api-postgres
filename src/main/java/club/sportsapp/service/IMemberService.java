@@ -6,6 +6,7 @@ import club.sportsapp.core.exceptions.EntityNotFoundException;
 import club.sportsapp.core.exceptions.FileUploadException;
 import club.sportsapp.dto.MemberInsertDTO;
 import club.sportsapp.dto.MemberReadOnlyDTO;
+import club.sportsapp.dto.MemberUpdateDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +21,7 @@ public interface IMemberService {
     void saveMembershipIdFile(UUID uuid, MultipartFile memberFile)
             throws FileUploadException, EntityNotFoundException;
 
-    MemberReadOnlyDTO updateMember(MemberInsertDTO memberInsertDTO)
+    MemberReadOnlyDTO updateMember(MemberUpdateDTO memberUpdateDTO)
             throws EntityAlreadyExistsException, EntityInvalidArgumentException, EntityNotFoundException;
 
     MemberReadOnlyDTO deleteMemberByUUID(UUID uuid) throws EntityNotFoundException;
