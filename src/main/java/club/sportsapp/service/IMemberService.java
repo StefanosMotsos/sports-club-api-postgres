@@ -4,6 +4,7 @@ import club.sportsapp.core.exceptions.EntityAlreadyExistsException;
 import club.sportsapp.core.exceptions.EntityInvalidArgumentException;
 import club.sportsapp.core.exceptions.EntityNotFoundException;
 import club.sportsapp.core.exceptions.FileUploadException;
+import club.sportsapp.core.filters.MemberFilters;
 import club.sportsapp.dto.MemberInsertDTO;
 import club.sportsapp.dto.MemberReadOnlyDTO;
 import club.sportsapp.dto.MemberUpdateDTO;
@@ -31,7 +32,7 @@ public interface IMemberService {
 
     Page<MemberReadOnlyDTO> getPaginatedMembers(Pageable pageable);
     Page<MemberReadOnlyDTO> getPaginatedMembersDeletedFalse(Pageable pageable);
-    //Page<MemberReadOnlyDTO> getPaginatedMembersFiltered(Pageable pageable, MemberFilters filters);
+    Page<MemberReadOnlyDTO> getPaginatedMembersFiltered(Pageable pageable, MemberFilters filters) throws EntityNotFoundException;
 
     boolean isMemberExists(String vat);
 

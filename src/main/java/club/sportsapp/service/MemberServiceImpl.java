@@ -4,6 +4,7 @@ import club.sportsapp.core.exceptions.EntityAlreadyExistsException;
 import club.sportsapp.core.exceptions.EntityInvalidArgumentException;
 import club.sportsapp.core.exceptions.EntityNotFoundException;
 import club.sportsapp.core.exceptions.FileUploadException;
+import club.sportsapp.core.filters.MemberFilters;
 import club.sportsapp.dto.MemberInsertDTO;
 import club.sportsapp.dto.MemberReadOnlyDTO;
 import club.sportsapp.dto.MemberUpdateDTO;
@@ -11,12 +12,15 @@ import club.sportsapp.mapper.Mapper;
 import club.sportsapp.model.*;
 import club.sportsapp.model.static_data.Sport;
 import club.sportsapp.repository.*;
+import club.sportsapp.specification.MemberSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,6 +34,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -267,13 +272,49 @@ public class MemberServiceImpl implements IMemberService{
     }
 
     @Override
-    public Page<MemberReadOnlyDTO> getPaginatedMembers(Pageable pageable) {
-        return null;
+    @PreAuthorize("hasAuthority('VIEW_MEMBERS')")
+    @Transactional(readOnly = true)
+    public Page<MemberReadOnlyDTO> getPaginatedMembersFiltered(Pageable pageable, MemberFilters filters) throws EntityNotFoundException {
+        try {
+            if (filters.getVat() != null) {
+                Member member = memberRepository.findByVat(filters.getVat())
+                        .orElseThrow(() -> new EntityNotFoundException("Member", "Member with vat= " + filters.getVat() + " not found"));
+                return singleResultPage(member, pageable);
+            }
+
+            if (filters.getMembershipId() != null) {
+                Member member = memberRepository.findByPersonalInfo_MembershipId(filters.getMembershipId())
+                        .orElseThrow(() -> new EntityNotFoundException("Member", "Member with membership= " + filters.getMembershipId() + " not found"));
+            }
+
+            var filtered = memberRepository.findAll(MemberSpecification.build(filters), pageable);
+
+            log.debug("Filtered and paginated members were returned successfully with page={} and size{}",
+                    pageable.getPageNumber(), pageable.getPageSize());
+
+            return filtered.map(mapper::mapToMemberReadOnlyDTO);
+        } catch (EntityNotFoundException e) {
+            log.error("Filtered and paginated members were not found");
+            throw e;
+        }
     }
 
     @Override
+    @PreAuthorize("hasAuthority('VIEW_MEMBERS')")
+    @Transactional(readOnly = true)
+    public Page<MemberReadOnlyDTO> getPaginatedMembers(Pageable pageable) {
+        Page<Member> memberPage = memberRepository.findAll(pageable);
+        log.debug("All paginated members were returned successfully");
+        return memberPage.map(mapper::mapToMemberReadOnlyDTO);
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('VIEW_MEMBERS')")
+    @Transactional(readOnly = true)
     public Page<MemberReadOnlyDTO> getPaginatedMembersDeletedFalse(Pageable pageable) {
-        return null;
+        Page<Member> memberPage = memberRepository.findAllByDeletedFalse(pageable);
+        log.debug("Paginated members were returned successfully");
+        return memberPage.map(mapper::mapToMemberReadOnlyDTO);
     }
 
     @Override
@@ -286,5 +327,13 @@ public class MemberServiceImpl implements IMemberService{
             return filename.substring(filename.lastIndexOf("."));
         }
         return "";
+    }
+
+    private Page<MemberReadOnlyDTO> singleResultPage(Member member, Pageable pageable) {
+        return new PageImpl<>(
+                List.of(mapper.mapToMemberReadOnlyDTO(member)),
+                pageable,
+                1
+        );
     }
 }
