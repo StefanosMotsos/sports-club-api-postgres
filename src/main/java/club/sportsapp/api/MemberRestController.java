@@ -1,6 +1,7 @@
 package club.sportsapp.api;
 
 import club.sportsapp.core.exceptions.*;
+import club.sportsapp.core.filters.MemberFilters;
 import club.sportsapp.dto.MemberInsertDTO;
 import club.sportsapp.dto.MemberReadOnlyDTO;
 import club.sportsapp.dto.MemberUpdateDTO;
@@ -8,6 +9,9 @@ import club.sportsapp.service.IMemberService;
 import club.sportsapp.validator.MemberInsertValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -94,6 +98,15 @@ public class MemberRestController {
         MemberReadOnlyDTO memberReadOnlyDTO = memberService.getMemberByUUIDAndDeletedFalse(uuid);
 
         return ResponseEntity.ok(memberReadOnlyDTO);
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<MemberReadOnlyDTO>> getMembersFiltered(
+            @PageableDefault(page = 0, size = 5) Pageable pageable,
+            @ModelAttribute MemberFilters filters)
+            throws EntityNotFoundException {
+        Page<MemberReadOnlyDTO> dtoPage = memberService.getPaginatedMembersFiltered(pageable, filters);
+        return ResponseEntity.ok(dtoPage);
     }
 
 }

@@ -56,6 +56,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/members/{uuid}/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/*").hasAuthority("VIEW_USER")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/members/{uuid}").hasAuthority("EDIT_MEMBER")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/members").hasAuthority("VIEW_MEMBERS")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/members/{uuid}").hasAnyAuthority("VIEW_MEMBER", "VIEW_ONLY_MEMBER")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/members/{uuid}").hasAuthority("DELETE_MEMBER")
                         .anyRequest().authenticated()
                 )

@@ -257,6 +257,7 @@ public class MemberServiceImpl implements IMemberService{
     }
 
     @Override
+    @PreAuthorize("hasAuthority('VIEW_MEMBER) or (hasAuthority('VIEW_ONLY_MEMBER') and @securityService.isOwnMemberProfile(#uuid, authentication))")
     @Transactional(rollbackFor = EntityNotFoundException.class)
     public MemberReadOnlyDTO getMemberByUUIDAndDeletedFalse(UUID uuid) throws EntityNotFoundException {
         try {

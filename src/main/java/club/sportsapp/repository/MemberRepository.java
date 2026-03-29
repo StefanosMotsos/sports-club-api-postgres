@@ -23,5 +23,5 @@ public interface MemberRepository extends JpaRepository<Member, Long>,
     @EntityGraph(attributePaths = {"personalInfo", "sport"})
     Page<Member> findAllByDeletedFalse(Pageable pageable);
 
-    boolean existsByUuidAndUserUuid(UUID memberUuid, UUID userUuid);
+    boolean existsByUuidAndUser_Uuid(UUID memberUuid, UUID userUuid);
 }
