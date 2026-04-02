@@ -1,9 +1,6 @@
 -- Insert roles
 INSERT INTO roles (name)
-VALUES
-    ('ADMIN'),
-    ('EMPLOYEE'),
-    ('MEMBER');
+VALUES ('ADMIN'), ('EMPLOYEE'), ('MEMBER');
 
 -- Insert capabilities
 INSERT INTO capabilities (name, description)
@@ -15,23 +12,25 @@ VALUES
     ('DELETE_MEMBER', 'Remove a member'),
     ('VIEW_ONLY_MEMBER', 'View only own member details');
 
--- Assign capabilities to ADMIN (all capabilities)
+-- Assign ALL capabilities to ADMIN
 INSERT INTO roles_capabilities (role_id, capability_id)
 SELECT r.id, c.id
 FROM roles r
-JOIN capabilities c
+CROSS JOIN capabilities c
 WHERE r.name = 'ADMIN';
 
+-- Assign specific capabilities to EMPLOYEE
 INSERT INTO roles_capabilities (role_id, capability_id)
 SELECT r.id, c.id
 FROM roles r
-JOIN capabilities c
+CROSS JOIN capabilities c
 WHERE r.name = 'EMPLOYEE'
   AND c.name IN ('VIEW_MEMBERS', 'VIEW_MEMBER');
 
+-- Assign specific capabilities to MEMBER
 INSERT INTO roles_capabilities (role_id, capability_id)
 SELECT r.id, c.id
 FROM roles r
-JOIN capabilities c
+CROSS JOIN capabilities c
 WHERE r.name = 'MEMBER'
-AND c.name IN ('VIEW_ONLY_MEMBER');
+  AND c.name = 'VIEW_ONLY_MEMBER';

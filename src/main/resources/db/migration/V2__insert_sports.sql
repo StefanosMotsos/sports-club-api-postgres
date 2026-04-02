@@ -12,4 +12,4 @@ INSERT INTO sports (id, name) VALUES
 (11, 'Gymnastics'),
 (12, 'Handball'),
 (13, 'Water Polo');
-ALTER TABLE sports AUTO_INCREMENT = 14;
+ALTER TABLE sports ALTER COLUMN id RESTART WITH 14;

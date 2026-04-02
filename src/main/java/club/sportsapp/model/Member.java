@@ -23,7 +23,7 @@ public class Member extends AbstractEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false, unique = true)
+    @Column(nullable = false, updatable = false, unique = true, columnDefinition = "UUID")
     private UUID uuid;
 
     @Column(nullable = false)
