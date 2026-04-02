@@ -21,7 +21,7 @@ public class MemberSpecification {
 
     private static Specification<Member> hasSport(String sport) {
         return (root, query, cb) -> sport == null ? cb.conjunction() :
-                cb.like(cb.lower(root.get("sport")), sport.toLowerCase() + "%");
+                cb.like(cb.lower(root.get("sport").get("name")), sport.toLowerCase() + "%");
     }
 
     private static Specification<Member> isDeleted(boolean deleted) {

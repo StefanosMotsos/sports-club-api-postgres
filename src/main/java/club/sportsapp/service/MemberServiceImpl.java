@@ -60,7 +60,7 @@ public class MemberServiceImpl implements IMemberService{
             throws EntityAlreadyExistsException, EntityInvalidArgumentException {
 
         try {
-            if (memberRepository.findByVat(dto.vat()).isPresent() && dto.vat() != null) {
+            if (dto.vat() != null && memberRepository.findByVat(dto.vat()).isPresent()) {
                 throw new EntityAlreadyExistsException("Member", "Member with vat " + dto.vat() + " already exists");
             }
 
@@ -143,6 +143,7 @@ public class MemberServiceImpl implements IMemberService{
 
         } catch (EntityNotFoundException e) {
             log.error("Attachment for member with uuid={} not found", uuid, e);
+            throw new EntityNotFoundException("Member", "Attachment for member with uuid=" + uuid + " not found");
         } catch (IOException | HttpServerErrorException e) {
             log.error("Error saving attachment for member with uuid={}", uuid, e);
             throw new FileUploadException("MembershipId", "Error saving attachment for member with uuid=" + uuid);
@@ -152,6 +153,7 @@ public class MemberServiceImpl implements IMemberService{
     }
 
     @Override
+    @Transactional(rollbackFor = { EntityAlreadyExistsException.class, EntityInvalidArgumentException.class, EntityNotFoundException.class })
     @PreAuthorize("hasAuthority('EDIT_MEMBER')")
     public MemberReadOnlyDTO updateMember(MemberUpdateDTO dto)
             throws EntityAlreadyExistsException, EntityInvalidArgumentException, EntityNotFoundException {
@@ -198,10 +200,10 @@ public class MemberServiceImpl implements IMemberService{
             }
 
             if (!member.getPersonalInfo().getIdentityNumber().equals(dto.personalInfoUpdateDTO().identityNumber())) {
-                if (personalInfoRepository.findByMembershipId(dto.personalInfoUpdateDTO().identityNumber()).isPresent()) {
+                if (personalInfoRepository.findByIdentityNumber(dto.personalInfoUpdateDTO().identityNumber()).isPresent()) {
                     throw new EntityAlreadyExistsException("PersonalInfo", "Update failed. Member with identity number " + dto.personalInfoUpdateDTO().identityNumber() + " already exists");
                 }
-                member.getPersonalInfo().setMembershipId(dto.personalInfoUpdateDTO().identityNumber());
+                member.getPersonalInfo().setIdentityNumber(dto.personalInfoUpdateDTO().identityNumber());
             }
 
             log.info("Member with uuid={} updated successfully", dto.uuid());
@@ -286,6 +288,7 @@ public class MemberServiceImpl implements IMemberService{
             if (filters.getMembershipId() != null) {
                 Member member = memberRepository.findByPersonalInfo_MembershipId(filters.getMembershipId())
                         .orElseThrow(() -> new EntityNotFoundException("Member", "Member with membership= " + filters.getMembershipId() + " not found"));
+                return singleResultPage(member, pageable);
             }
 
             var filtered = memberRepository.findAll(MemberSpecification.build(filters), pageable);
