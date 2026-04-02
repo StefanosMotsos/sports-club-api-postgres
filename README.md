@@ -1,7 +1,7 @@
-# Sports Club REST App
+# Sports Club REST App(Postgres)
 
 ## Overview
-`sports-club-rest-app` is a Spring Boot REST API for managing a Sports Club registry. It uses:
+`sports-club-rest-postgres` is a Spring Boot REST API for managing a Sports Club registry. It uses:
 * MySQL + Flyway database migrations
 * Spring Security with JWT Bearer authentication
 * Spring Data JPA for persistence
