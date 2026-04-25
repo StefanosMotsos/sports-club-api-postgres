@@ -2,7 +2,7 @@
 
 ## Overview
 `sports-club-rest-postgres` is a Spring Boot REST API for managing a Sports Club registry. It uses:
-* MySQL + Flyway database migrations
+* PostgreSQL + Flyway database migrations
 * Spring Security with JWT Bearer authentication
 * Spring Data JPA for persistence
 * OpenAPI/Swagger UI for API documentation
@@ -18,23 +18,24 @@
 
 ## Requirements
 * Java 21+
-* MySQL server
-* A database/schema matching the Flyway migrations in `src/main/resources/db/migration`
+* PostgreSQL server
 * A writable working directory (used for logs and uploads; file uploads default to `uploads/`)
+* Docker and Docker Compose (optional, for containerized setup)
 
 ## Setup
-1. Create a MySQL database:
-   * Default: `sportsappdb`
-   * Or set `MYSQL_DB` to another name
+1. Create a PostgreSQL database (if not using Docker):
+   * Default in config: `sportsdb`
+   * Or set `POSTGRES_DB` to another name
 2. Start the application; Flyway migrations will run automatically on startup (`spring.flyway.enabled=true`).
 
 ## Configuration / Environment Variables
-The app reads MySQL connection settings from environment variables (with defaults shown):
-* `MYSQL_HOST` (default: `localhost`)
-* `MYSQL_PORT` (default: `3306`)
-* `MYSQL_DB` (default: `sportsappdb` in `dev`, `schoolapp9csrpro` in `staging`)
-* `MYSQL_USER` (default: `user9csr`)
-* `MYSQL_PASSWORD` (default: `12345`)
+The app reads PostgreSQL connection settings from environment variables (with defaults shown):
+* `POSTGRES_DB` (default: `sportsdb`)
+* `POSTGRES_USER` (default: `user9`)
+* `POSTGRES_PASSWORD` (default: `12345`)
+* `SPRING_DATASOURCE_URL` (e.g. `jdbc:postgresql://localhost:5432/sportsdb`)
+* `SPRING_DATASOURCE_USERNAME` (overrides user from Spring datasource)
+* `SPRING_DATASOURCE_PASSWORD` (overrides password from Spring datasource)
 
 Other notable configuration in `src/main/resources`:
 * `app.security.secret-key` (JWT signing key) and `app.security.jwt-expiration`
@@ -42,7 +43,7 @@ Other notable configuration in `src/main/resources`:
 * `file.upload.dir` (upload destination; default: `uploads/`)
 * `spring.servlet.multipart.max-file-size` and `spring.servlet.multipart.max-request-size` (default: `5MB`)
 
-You can also pass Spring properties directly at runtime, e.g. `--spring.profiles.active=prod`.
+You can also pass Spring properties directly at runtime, e.g. `--spring.profiles.active=staging`.
 
 Environment variable names follow Spring Boot's relaxed binding, e.g.:
 * `APP_SECURITY_SECRET_KEY` -> `app.security.secret-key`
@@ -50,9 +51,9 @@ Environment variable names follow Spring Boot's relaxed binding, e.g.:
 * `ALLOWED_ORIGINS` -> `allowed.origins`
 * `FILE_UPLOAD_DIR` -> `file.upload.dir`
 
-### Profile note (`dev` vs `prod`/`staging`)
+### Profile note (`dev` vs `staging`)
 `dev` is the default profile (`spring.profiles.active=dev` in `application.properties`) and it includes the required security/CORS/upload settings.
-`prod`/`staging` only define DB-related properties; if you run them, make sure you also provide:
+`staging` only defines DB-related properties; if you run it, make sure you also provide:
 * `app.security.secret-key` / `app.security.jwt-expiration` (JWT)
 * `allowed.origins` (CORS)
 * `file.upload.dir` (file uploads)
@@ -66,14 +67,14 @@ Windows (Gradle wrapper):
 ```
 
 ### Run with a different Spring profile
-Note: `prod`/`staging` profiles don't include security/CORS/upload properties. If you run with them, also provide:
+Note: `staging` doesn't include security/CORS/upload properties. If you run with it, also provide:
 * `app.security.secret-key`
 * `app.security.jwt-expiration`
 * `allowed.origins`
 * `file.upload.dir`
 
 ```powershell
-.\gradlew.bat bootRun --args="--spring.profiles.active=prod"
+.\gradlew.bat bootRun --args="--spring.profiles.active=staging"
 ```
 
 ### Build a runnable jar and start it
@@ -87,9 +88,30 @@ java -jar .\build\libs\*.jar --spring.profiles.active=dev
 .\gradlew.bat test
 ```
 
+### Run with Docker Compose (PostgreSQL + API)
+`docker-compose.yml` starts:
+* `db` -> PostgreSQL 17 (`postgres:17-alpine`), exposed on host port `5433`
+* `app` -> Spring Boot API, exposed on host port `8080`
+
+```powershell
+docker compose up -d --build
+```
+
+Stop containers:
+```powershell
+docker compose down
+```
+
+Use the helper script (Linux/macOS/git-bash):
+```bash
+./startup.sh
+```
+
+The script builds the project, recreates containers, and waits for the API to respond on `http://localhost:8080`.
+
 ## Gradle Scripts (Useful Commands)
 * `.\gradlew.bat bootRun` - start the API
-* `.\gradlew.bat test` - run unit/integration tests
+* `.\gradlew.bat test` - run JUnit test suite (unit + integration style tests)
 * `.\gradlew.bat build` - full build
 * `.\gradlew.bat bootJar` - build an executable jar
 * `.\gradlew.bat clean` - clean build artifacts
@@ -157,8 +179,21 @@ Migrations include:
 
 ## Tests
 * Test framework: JUnit 5
-* Test(s) present:
-  * `SportAppApplicationTests` (`@SpringBootTest`) - verifies the Spring application context loads
+* Test classes present:
+  * `SportAppApplicationTests` (`@SpringBootTest`) - verifies Spring context loads
+  * `MemberRestControllerTest` (`@SpringBootTest` + `MockMvc`) - API endpoint behavior for member operations
+  * `MemberRepositoryTest` (`@DataJpaTest`) - repository persistence and query behavior
+  * `MemberServiceTest` (`@SpringBootTest`) - service-layer member create/update logic
+
+Run full test suite:
+```powershell
+.\gradlew.bat test
+```
+
+Run one class:
+```powershell
+.\gradlew.bat test --tests "club.sportsapp.service.MemberServiceTest"
+```
 
 Run with:
 ```powershell
@@ -178,9 +213,9 @@ Run with:
   * `core/` - shared concerns (errors, logging, OpenAPI config)
   * `runner/` - command-line runner used for report generation/testing
 * `src/main/resources/`
-  * `application*.properties` - Spring configuration for `dev`, `prod`, `staging`
+  * `application*.properties` - Spring configuration for `dev` and `staging`
   * `db/migration/` - Flyway migration scripts
-* `src/test/java/` - application context load tests
+* `src/test/java/` - JUnit tests for context, API, repository, and service layers
 
 ## License
 * Repository does not contain a top-level `LICENSE*`/`COPYING*` file (none found in the working tree).
